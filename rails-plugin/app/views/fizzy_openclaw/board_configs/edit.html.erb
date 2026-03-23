@@ -1,0 +1,23 @@
+<div class="fizzy-openclaw-config">
+  <h3>Agent Configuration</h3>
+
+  <%= form_with model: @config, url: fizzy_openclaw.board_agent_config_path(@board), method: :patch do |f| %>
+    <% if @config.errors.any? %>
+      <div class="alert alert-danger">
+        <% @config.errors.full_messages.each do |msg| %>
+          <p><%= msg %></p>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="field">
+      <%= f.label :system_prompt, "Board System Prompt" %>
+      <p class="help-text">Context given to the AI agent for all cards on this board.</p>
+      <%= f.text_area :system_prompt, rows: 6, placeholder: "You are an AI assistant helping with tasks on this board..." %>
+    </div>
+
+    <div class="actions">
+      <%= f.submit "Save Configuration" %>
+    </div>
+  <% end %>
+</div>

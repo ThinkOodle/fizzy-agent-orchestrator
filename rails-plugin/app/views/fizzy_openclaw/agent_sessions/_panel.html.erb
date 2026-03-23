@@ -1,0 +1,43 @@
+<%# Partial: render in card detail view
+    Usage: <%= render "fizzy_openclaw/agent_sessions/panel", card: @card %>
+%>
+<% session = card.openclaw_card_session %>
+<% column_config = FizzyOpenclaw::ColumnConfig.find_by(column_id: card.column_id) %>
+
+<div class="fizzy-openclaw-panel"
+     data-controller="fizzy-openclaw-agent-panel"
+     data-fizzy-openclaw-agent-panel-card-number-value="<%= card.number %>"
+     data-fizzy-openclaw-agent-panel-last-seq-value="<%= session&.last_event_seq || 0 %>"
+     data-fizzy-openclaw-agent-panel-status-value="<%= session&.status || 'idle' %>">
+
+  <div class="panel-header">
+    <h4>🤖 Agent</h4>
+    <span class="agent-status" data-fizzy-openclaw-agent-panel-target="status">
+      <%= session&.status || "idle" %>
+    </span>
+  </div>
+
+  <% if column_config %>
+    <div class="panel-actions">
+      <% if session&.active? %>
+        <%= button_to "Stop Agent",
+            fizzy_openclaw.stop_card_path(card),
+            method: :post,
+            class: "btn btn-danger btn-sm",
+            data: { action: "fizzy-openclaw-agent-panel#stop" } %>
+      <% else %>
+        <%= button_to "Start Agent",
+            fizzy_openclaw.start_card_path(card),
+            method: :post,
+            class: "btn btn-primary btn-sm",
+            data: { action: "fizzy-openclaw-agent-panel#start" } %>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-muted small">No agent configured for this column.</p>
+  <% end %>
+
+  <div class="agent-log" data-fizzy-openclaw-agent-panel-target="log">
+    <%# Events loaded dynamically via Stimulus %>
+  </div>
+</div>

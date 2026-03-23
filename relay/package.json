@@ -1,0 +1,13 @@
+{
+  "name": "fizzy-openclaw-relay",
+  "version": "0.1.0",
+  "description": "File-tail relay: watches OpenClaw session JSONL files and serves events to Fizzy UI",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0"
+  }
+}

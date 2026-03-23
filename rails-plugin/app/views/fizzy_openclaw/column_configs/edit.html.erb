@@ -1,0 +1,33 @@
+<div class="fizzy-openclaw-config">
+  <h4>Column Agent Configuration</h4>
+
+  <%= form_with model: @config, url: fizzy_openclaw.column_agent_config_path(@column), method: :patch do |f| %>
+    <% if @config.errors.any? %>
+      <div class="alert alert-danger">
+        <% @config.errors.full_messages.each do |msg| %>
+          <p><%= msg %></p>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="field field--checkbox">
+      <%= f.check_box :auto_spawn %>
+      <%= f.label :auto_spawn, "Auto-spawn agent when card moves to this column" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :system_prompt, "Column Prompt" %>
+      <p class="help-text">Instructions specific to cards in this column.</p>
+      <%= f.text_area :system_prompt, rows: 4, placeholder: "When a card enters this column, you should..." %>
+    </div>
+
+    <div class="field">
+      <%= f.label :timeout_minutes, "Timeout (minutes)" %>
+      <%= f.number_field :timeout_minutes, min: 1, max: 120 %>
+    </div>
+
+    <div class="actions">
+      <%= f.submit "Save" %>
+    </div>
+  <% end %>
+</div>
