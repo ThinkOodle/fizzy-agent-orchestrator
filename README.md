@@ -1,6 +1,6 @@
-# Fizzy OpenClaw
+# Fizzy Agent Orchestrator
 
-AI agent integration for Fizzy boards via OpenClaw. Enables automatic agent spawning when cards move between columns, with per-board and per-column context configuration, and live activity display in the card detail panel.
+AI agent orchestration for Fizzy boards. Currently supports OpenClaw as the agent backend; designed to be extensible for other providers.
 
 ## System Architecture
 
@@ -40,8 +40,8 @@ Node.js HTTP server that:
 
 ### 3. JavaScript (`rails-plugin/app/javascript/`)
 
-Stimulus controller `fizzy-openclaw--agent-panel` that:
-- Polls `/openclaw/events` every 5 seconds while session is active
+Stimulus controller `fizzy-agent-orchestrator--agent-panel` that:
+- Polls `/agent_orchestrator/events` every 5 seconds while session is active
 - Renders tool calls, assistant messages, errors
 - Handles start/stop via AJAX
 
@@ -50,15 +50,15 @@ Stimulus controller `fizzy-openclaw--agent-panel` that:
 ### 1. Add to Fizzy Gemfile
 
 ```ruby
-gem "fizzy-openclaw", path: "path/to/fizzy-openclaw/rails-plugin"
+gem "fizzy_agent_orchestrator", path: "path/to/fizzy-agent-orchestrator/rails-plugin"
 # or when published:
-# gem "fizzy-openclaw", "~> 0.1"
+# gem "fizzy_agent_orchestrator", "~> 0.1"
 ```
 
 ### 2. Run migrations
 
 ```bash
-bin/rails fizzy_openclaw:install:migrations
+bin/rails fizzy_agent_orchestrator:install:migrations
 bin/rails db:migrate
 ```
 
@@ -66,7 +66,7 @@ bin/rails db:migrate
 
 ```ruby
 # config/routes.rb
-mount FizzyOpenclaw::Engine => "/openclaw"
+mount FizzyAgentOrchestrator::Engine => "/agent_orchestrator"
 ```
 
 ### 4. Configure credentials
@@ -83,25 +83,25 @@ openclaw_hook_token: your-token-here
 
 ```javascript
 // app/javascript/controllers/index.js
-import AgentPanelController from "fizzy_openclaw/controllers/agent_panel_controller"
-application.register("fizzy-openclaw-agent-panel", AgentPanelController)
+import AgentPanelController from "fizzy_agent_orchestrator/controllers/agent_panel_controller"
+application.register("fizzy-agent-orchestrator-agent-panel", AgentPanelController)
 ```
 
 ### 6. Render the panel in card detail
 
 ```erb
 <%# In your card detail view: %>
-<%= render "fizzy_openclaw/agent_sessions/panel", card: @card %>
+<%= render "fizzy_agent_orchestrator/agent_sessions/panel", card: @card %>
 ```
 
 ### 7. Add board/column config links
 
 ```erb
 <%# In board settings view: %>
-<%= link_to "Configure Agent", fizzy_openclaw.edit_board_agent_config_path(@board) %>
+<%= link_to "Configure Agent", fizzy_agent_orchestrator.edit_board_agent_config_path(@board) %>
 
 <%# In column settings view: %>
-<%= link_to "Configure Agent", fizzy_openclaw.edit_column_agent_config_path(@column) %>
+<%= link_to "Configure Agent", fizzy_agent_orchestrator.edit_column_agent_config_path(@column) %>
 ```
 
 ### 8. Start the relay
@@ -161,3 +161,7 @@ bundle exec rspec
 ## Session Key Format
 
 OpenClaw session keys must include `hook:fizzy:card-{card_number}` somewhere in the session content (typically in the session metadata/first message) for the relay to index them correctly.
+
+## License
+
+MIT
