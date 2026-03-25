@@ -5,7 +5,7 @@ module FizzyAgentOrchestrator
     # Don't use belongs_to - Fizzy scopes boards through Current.user
     # Just validate the ID is present
     validates :board_id, presence: true, uniqueness: true
-    validates :system_prompt, allow_blank: true
+    # system_prompt is optional
 
     def closed_context(card)
       build_special_state_context(card, closed_prompt)
