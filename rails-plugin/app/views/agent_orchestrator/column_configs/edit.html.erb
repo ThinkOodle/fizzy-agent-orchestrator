@@ -15,7 +15,7 @@
         Added to the board context when an agent works on cards in this column.
       </p>
 
-      <%= form_with model: @agent_config, url: board_column_agent_config_path(@board, @column), method: :patch do |f| %>
+      <%= form_with model: @agent_config, url: board_column_agent_config_path(@board, @column), method: :patch, scope: :column_config do |f| %>
         <%= f.text_area :system_prompt, class: "input", rows: 6,
               placeholder: "e.g. Cards here are ready to implement. Write code, run tests, open a PR." %>
 
