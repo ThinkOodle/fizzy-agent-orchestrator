@@ -1,10 +1,16 @@
-FizzyOpenclaw::Engine.routes.draw do
+FizzyAgentOrchestrator::Engine.routes.draw do
   resources :boards, only: [] do
-    resource :agent_config, only: [:edit, :update], controller: "board_configs"
+    resource :agent_config,
+      only: [:show, :edit, :update],
+      controller: "board_configs",
+      as: :board_agent_config
   end
 
   resources :columns, only: [] do
-    resource :agent_config, only: [:edit, :update], controller: "column_configs"
+    resource :agent_config,
+      only: [:show, :edit, :update],
+      controller: "column_configs",
+      as: :column_agent_config
   end
 
   resources :cards, only: [] do
@@ -14,5 +20,6 @@ FizzyOpenclaw::Engine.routes.draw do
     end
   end
 
-  get "/events", to: "agent_sessions#events"
+  # Relay proxy — Fizzy polls this and we forward to relay
+  get "events", to: "agent_sessions#events"
 end

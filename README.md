@@ -1,166 +1,141 @@
 # Fizzy Agent Orchestrator
 
-AI agent orchestration for Fizzy boards. Currently supports OpenClaw as the agent backend; designed to be extensible for other providers.
+AI Agent Orchestrator for [Fizzy](https://fizzy.do). Enables per-board and per-column AI agent configuration with live session observability.
 
-## System Architecture
+**Agent backend:** OpenClaw (first-party support). Designed to be extensible for other providers.
+
+---
+
+## How It Works
+
+1. You configure a **system prompt** per board (project context) and per column (stage-specific instructions)
+2. When a card enters a column with **auto-spawn enabled**, Fizzy fires a webhook to your OpenClaw instance with the full context
+3. OpenClaw spawns an agent session and works on the card
+4. The **relay** watches the session file and streams tool calls / output back to the Fizzy card UI in real time
 
 ```
 Card moves to column
     ↓
-Column config checked (auto_spawn?)
-    ↓
-SessionSpawner POSTs to OpenClaw /hooks/fizzy
-    { action: "column_changed", agent_context: {...} }
+Fizzy fires POST /hooks/fizzy (with agent_context)
     ↓
 OpenClaw spawns fizzy-orchestrator session
-    (session key: "hook:fizzy:card-{card_number}")
     ↓
-Relay watches ~/.openclaw/agents/fizzy-orchestrator/sessions/*.jsonl
+Relay watches JSONL session file
     ↓
-Fizzy card panel polls relay every 5s for live event log
+Fizzy card UI polls relay every 5s → live log
 ```
 
-## Components
+---
 
-### 1. Rails Plugin (`rails-plugin/`)
+## Installation
 
-Mountable Rails engine with:
-- **Models:** `BoardConfig`, `ColumnConfig`, `CardSession`
-- **Service:** `SessionSpawner` — HTTP POST to OpenClaw webhook
-- **CardExtension:** concern included into Fizzy's `Card` model
-- **Controllers:** board config, column config, agent sessions (events proxy, start/stop)
-- **Views:** edit forms, agent panel partial
-
-### 2. Relay Server (`relay/`)
-
-Node.js HTTP server that:
-- Watches `~/.openclaw/agents/fizzy-orchestrator/sessions/*.jsonl`
-- Indexes files by card number (looks for `hook:fizzy:card-{N}` in content)
-- Serves `GET /events?card_number=123&after_seq=0`
-
-### 3. JavaScript (`rails-plugin/app/javascript/`)
-
-Stimulus controller `fizzy-agent-orchestrator--agent-panel` that:
-- Polls `/agent_orchestrator/events` every 5 seconds while session is active
-- Renders tool calls, assistant messages, errors
-- Handles start/stop via AJAX
-
-## Setup
-
-### 1. Add to Fizzy Gemfile
+### 1. Add to Gemfile
 
 ```ruby
-gem "fizzy_agent_orchestrator", path: "path/to/fizzy-agent-orchestrator/rails-plugin"
-# or when published:
-# gem "fizzy_agent_orchestrator", "~> 0.1"
+gem "fizzy_agent_orchestrator", github: "ThinkOodle/fizzy-agent-orchestrator", glob: "rails-plugin/*.gemspec"
 ```
 
-### 2. Run migrations
-
-```bash
-bin/rails fizzy_agent_orchestrator:install:migrations
-bin/rails db:migrate
-```
-
-### 3. Mount engine
+### 2. Mount the engine
 
 ```ruby
 # config/routes.rb
 mount FizzyAgentOrchestrator::Engine => "/agent_orchestrator"
 ```
 
-### 4. Configure credentials
-
-```bash
-bin/rails credentials:edit
-```
+### 3. Add environment variables
 
 ```yaml
-openclaw_hook_token: your-token-here
+# .kamal/secrets (or your env management)
+OPENCLAW_HOOK_TOKEN: <your-openclaw-hooks-token>
+OPENCLAW_HOOK_URL: http://<your-openclaw-host>:18789/hooks/fizzy
+OPENCLAW_RELAY_URL: http://<your-openclaw-host>:18795
 ```
 
-### 5. Import JavaScript
-
-```javascript
-// app/javascript/controllers/index.js
-import AgentPanelController from "fizzy_agent_orchestrator/controllers/agent_panel_controller"
-application.register("fizzy-agent-orchestrator-agent-panel", AgentPanelController)
-```
-
-### 6. Render the panel in card detail
-
-```erb
-<%# In your card detail view: %>
-<%= render "fizzy_agent_orchestrator/agent_sessions/panel", card: @card %>
-```
-
-### 7. Add board/column config links
-
-```erb
-<%# In board settings view: %>
-<%= link_to "Configure Agent", fizzy_agent_orchestrator.edit_board_agent_config_path(@board) %>
-
-<%# In column settings view: %>
-<%= link_to "Configure Agent", fizzy_agent_orchestrator.edit_column_agent_config_path(@column) %>
-```
-
-### 8. Start the relay
+### 4. Deploy
 
 ```bash
-cd relay
-npm install
-npm start
-# Runs on port 18795 by default
+kamal deploy
 ```
 
-For production, use a systemd service or similar process manager.
+Migrations run automatically on deploy via `db:prepare`. No manual DB steps needed.
 
-## Environment Variables (Relay)
+---
+
+## OpenClaw Setup
+
+### 1. Enable webhook hooks in `~/.openclaw/openclaw.json`
+
+```json5
+{
+  hooks: {
+    enabled: true,
+    token: "your-secret-token",
+    allowedAgentIds: ["fizzy-orchestrator"],
+    mappings: [
+      {
+        id: "fizzy",
+        match: { path: "/fizzy" },
+        action: "agent",
+        agentId: "fizzy-orchestrator",
+        deliver: false
+      }
+    ]
+  }
+}
+```
+
+### 2. Deploy the relay (on your OpenClaw host)
+
+```bash
+# Clone the repo and install relay
+git clone https://github.com/ThinkOodle/fizzy-agent-orchestrator
+cd fizzy-agent-orchestrator/relay
+npm install
+
+# Run as a service (systemd example)
+# Or: node server.js &
+```
+
+**Relay env vars:**
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `RELAY_PORT` | `18795` | HTTP port |
-| `SESSIONS_DIR` | `~/.openclaw/agents/fizzy-orchestrator/sessions` | Path to watch |
+| `SESSIONS_DIR` | `~/.openclaw/agents/fizzy-orchestrator/sessions` | JSONL sessions path |
 
-## Relay API
+### 3. Update fizzy-router.ts to handle agent context
 
-### `GET /events`
+Add to your `fizzy-router.ts` transform:
 
-| Param | Required | Description |
-|-------|----------|-------------|
-| `card_number` | yes | Card number (not ID) |
-| `after_seq` | no | Return events with seq > this value (default: 0) |
+```typescript
+if (action === 'column_changed') {
+  const agentContext = event?.agent_context;
+  if (!agentContext?.column_prompt) return null;
 
-Response:
-```json
-{
-  "events": [
-    { "seq": 1, "type": "tool_call", "tool": "read_file", "timestamp": "..." },
-    { "seq": 2, "type": "assistant", "content": "I found the issue...", "timestamp": "..." }
-  ],
-  "has_more": false
+  const sessionKey = `hook:fizzy:card-${cardNumber}`;
+  const contextPrefix = await buildFullContext('column_changed');
+  const message = contextPrefix + '\n\n---\n\n' + agentContext.column_prompt;
+
+  return { message, sessionKey, timeoutSeconds: (agentContext.timeout_minutes || 30) * 60 };
 }
 ```
 
-### `GET /health`
+---
 
-Returns `{ "status": "ok", "sessions": N }`.
+## Usage
 
-### `GET /sessions`
+1. Go to **Board Settings** → **Agent** tab
+2. Set the board-level system prompt (project context, tech stack, conventions)
+3. Go to **Column Settings** → **Agent** for any column
+4. Set the column prompt and enable **Auto-spawn**
+5. Move a card into that column — watch the agent panel in the card detail
 
-Debug endpoint — shows all indexed sessions and event counts.
+---
 
-## Testing
+## Architecture
 
-```bash
-cd rails-plugin
-bundle install
-bundle exec rspec
-```
-
-## Session Key Format
-
-OpenClaw session keys must include `hook:fizzy:card-{card_number}` somewhere in the session content (typically in the session metadata/first message) for the relay to index them correctly.
+- `rails-plugin/` — Rails Engine (models, controllers, Stimulus JS controller)
+- `relay/` — Node.js file-tail relay for JSONL session observability
 
 ## License
 

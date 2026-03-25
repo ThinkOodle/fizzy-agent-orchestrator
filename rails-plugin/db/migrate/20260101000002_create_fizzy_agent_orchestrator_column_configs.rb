@@ -1,6 +1,6 @@
 class CreateFizzyOpenclawColumnConfigs < ActiveRecord::Migration[7.0]
   def change
-    create_table :fizzy_openclaw_column_configs do |t|
+    create_table :fizzy_agent_orchestrator_column_configs do |t|
       t.bigint :column_id, null: false
       t.text :system_prompt
       t.boolean :auto_spawn, default: false, null: false
@@ -9,6 +9,6 @@ class CreateFizzyOpenclawColumnConfigs < ActiveRecord::Migration[7.0]
       t.timestamps
     end
 
-    add_index :fizzy_openclaw_column_configs, :column_id, unique: true
+    add_index :fizzy_agent_orchestrator_column_configs, :column_id, unique: true
   end
 end
