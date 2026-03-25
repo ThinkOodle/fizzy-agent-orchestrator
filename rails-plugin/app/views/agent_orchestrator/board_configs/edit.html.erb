@@ -13,8 +13,6 @@
       <h3 class="settings__section-title">Board Context</h3>
       <p class="settings__section-description">
         Base prompt included in every agent session on this board. Describe the project, stack, conventions.
-        <br><br>
-        <em>Note: "Not Now", "Done", and other special states use this board context only. Per-column context is set via each column's settings menu.</em>
       </p>
 
       <%= form_with model: @agent_config, url: board_agent_config_path(@board), method: :patch do |f| %>
@@ -22,6 +20,41 @@
               placeholder: "e.g. You're working on the Nebula project. Stack: Rails 8, Ruby 3.4, Hotwire. Style: StandardRB. Tests: RSpec." %>
         <div style="margin-top: 1rem">
           <%= f.submit "Save", class: "btn btn--primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="settings__panel panel shadow">
+    <div class="settings__section">
+      <h3 class="settings__section-title">Special State Prompts</h3>
+      <p class="settings__section-description">
+        Configure agent behavior when cards enter special states (closed or not-now).
+        These states don't belong to a column, so only board-level context applies.
+        Add a state-specific prompt below to give the agent additional instructions for that moment.
+      </p>
+
+      <%= form_with model: @agent_config, url: board_agent_config_path(@board), method: :patch do |f| %>
+        <div class="settings__field" style="margin-bottom: 1.5rem;">
+          <label class="label" style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+            <%= f.check_box :closed_auto_spawn, class: "checkbox" %>
+            <span>Auto-spawn agent when a card is <strong>closed</strong></span>
+          </label>
+          <%= f.text_area :closed_prompt, class: "input", rows: 5,
+                placeholder: "e.g. This card has been closed. Write a brief completion summary as a comment on the card, noting what was done and any follow-up items." %>
+        </div>
+
+        <div class="settings__field" style="margin-bottom: 1rem;">
+          <label class="label" style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+            <%= f.check_box :not_now_auto_spawn, class: "checkbox" %>
+            <span>Auto-spawn agent when a card is marked <strong>not now</strong></span>
+          </label>
+          <%= f.text_area :not_now_prompt, class: "input", rows: 5,
+                placeholder: "e.g. This card has been deferred. Leave a comment summarizing the current state and what would need to happen for it to move forward." %>
+        </div>
+
+        <div style="margin-top: 1rem">
+          <%= f.submit "Save Special State Settings", class: "btn btn--primary" %>
         </div>
       <% end %>
     </div>

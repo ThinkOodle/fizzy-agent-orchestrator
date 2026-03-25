@@ -6,12 +6,18 @@ module FizzyAgentOrchestrator
     HOOK_URL = (ENV['OPENCLAW_HOOK_URL'] || 'http://localhost:18789/hooks/fizzy').freeze
 
     def self.spawn(card, column_config)
-      new(card, column_config).spawn
+      new(card, column_config: column_config).spawn
     end
 
-    def initialize(card, column_config)
+    def self.spawn_for_special_state(card, board_config, state)
+      new(card, board_config: board_config, special_state: state).spawn
+    end
+
+    def initialize(card, column_config: nil, board_config: nil, special_state: nil)
       @card = card
       @column_config = column_config
+      @board_config = board_config
+      @special_state = special_state
     end
 
     def spawn
@@ -31,11 +37,11 @@ module FizzyAgentOrchestrator
         session
       else
         session.update!(status: :failed, completed_at: Time.current)
-        Rails.logger.error "[FizzyOpenclaw] Spawn failed (HTTP #{response&.code}): #{response&.body}"
+        Rails.logger.error "[FizzyAgentOrchestrator] Spawn failed (HTTP #{response&.code}): #{response&.body}"
         nil
       end
     rescue => e
-      Rails.logger.error "[FizzyOpenclaw] Spawn error: #{e.message}"
+      Rails.logger.error "[FizzyAgentOrchestrator] Spawn error: #{e.message}"
       nil
     end
 
@@ -56,30 +62,64 @@ module FizzyAgentOrchestrator
     end
 
     def payload
+      if @special_state
+        special_state_payload
+      else
+        column_change_payload
+      end
+    end
+
+    def column_change_payload
       board = @column_config.column.board
       board_config = FizzyAgentOrchestrator::BoardConfig.find_by(board_id: board.id)
 
       {
         action: "column_changed",
-        card: {
-          id: @card.id,
-          number: @card.number,
-          title: @card.title
-        },
+        card: card_attrs,
         column: {
           id: @column_config.column.id,
           name: @column_config.column.name
         },
-        board: {
-          id: board.id,
-          name: board.name
-        },
+        board: board_attrs(board),
         agent_context: {
           board_prompt: board_config&.system_prompt,
           column_prompt: @column_config.system_prompt,
           timeout_minutes: @column_config.timeout_minutes,
           allowed_tools: @column_config.allowed_tools
         }
+      }
+    end
+
+    def special_state_payload
+      board = @card.board
+
+      context_method = :"#{@special_state}_context"
+      context = @board_config.respond_to?(context_method) ? @board_config.public_send(context_method, @card) : @board_config.system_prompt
+
+      {
+        action: "state_changed",
+        state: @special_state,
+        card: card_attrs,
+        board: board_attrs(board),
+        agent_context: {
+          prompt: context,
+          board_prompt: @board_config.system_prompt
+        }
+      }
+    end
+
+    def card_attrs
+      {
+        id: @card.id,
+        number: @card.number,
+        title: @card.title
+      }
+    end
+
+    def board_attrs(board)
+      {
+        id: board.id,
+        name: board.name
       }
     end
 

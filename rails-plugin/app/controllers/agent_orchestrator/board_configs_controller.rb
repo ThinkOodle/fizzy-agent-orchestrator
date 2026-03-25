@@ -22,6 +22,10 @@ class AgentOrchestrator::BoardConfigsController < ApplicationController
   private
 
   def agent_config_params
-    params.require(:board_config).permit(:system_prompt, :context_mode)
+    params.require(:board_config).permit(
+      :system_prompt,
+      :closed_prompt, :closed_auto_spawn,
+      :not_now_prompt, :not_now_auto_spawn
+    )
   end
 end
