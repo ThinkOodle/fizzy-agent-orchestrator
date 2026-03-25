@@ -1,4 +1,4 @@
-class CreateFizzyOpenclawBoardConfigs < ActiveRecord::Migration[7.0]
+class CreateFizzyAgentOrchestratorBoardConfigs < ActiveRecord::Migration[7.0]
   def change
     create_table :fizzy_agent_orchestrator_board_configs do |t|
       t.bigint :board_id, null: false

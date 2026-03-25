@@ -1,4 +1,4 @@
-class CreateFizzyOpenclawColumnConfigs < ActiveRecord::Migration[7.0]
+class CreateFizzyAgentOrchestratorColumnConfigs < ActiveRecord::Migration[7.0]
   def change
     create_table :fizzy_agent_orchestrator_column_configs do |t|
       t.bigint :column_id, null: false

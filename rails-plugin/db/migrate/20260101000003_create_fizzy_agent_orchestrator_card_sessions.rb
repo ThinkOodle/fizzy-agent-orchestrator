@@ -1,4 +1,4 @@
-class CreateFizzyOpenclawCardSessions < ActiveRecord::Migration[7.0]
+class CreateFizzyAgentOrchestratorCardSessions < ActiveRecord::Migration[7.0]
   def change
     create_table :fizzy_agent_orchestrator_card_sessions do |t|
       t.bigint :card_id, null: false
