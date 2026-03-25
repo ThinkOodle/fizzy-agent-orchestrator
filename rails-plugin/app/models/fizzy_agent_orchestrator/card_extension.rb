@@ -16,6 +16,27 @@ module FizzyAgentOrchestrator
       FizzyAgentOrchestrator::ColumnConfig.find_by(column_id: column_id)
     end
 
+    def openclaw_board_config
+      FizzyAgentOrchestrator::BoardConfig.find_by(board_id: board_id)
+    end
+
+    # Called externally by ClosureExtension / NotNowExtension hooks
+    def spawn_openclaw_agent_for_state(state)
+      board_config = openclaw_board_config
+      return unless board_config
+
+      case state
+      when :closed
+        return unless board_config.closed_auto_spawn?
+      when :not_now
+        return unless board_config.not_now_auto_spawn?
+      else
+        return
+      end
+
+      SessionSpawner.spawn_for_special_state(self, board_config, state)
+    end
+
     private
 
     def spawn_openclaw_agent
