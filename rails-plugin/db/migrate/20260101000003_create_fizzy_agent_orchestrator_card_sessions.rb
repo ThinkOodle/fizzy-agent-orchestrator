@@ -9,7 +9,9 @@ class CreateFizzyAgentOrchestratorCardSessions < ActiveRecord::Migration[7.0]
       t.timestamps
     end
 
-    add_index :fizzy_agent_orchestrator_card_sessions, :card_id
-    add_index :fizzy_agent_orchestrator_card_sessions, [:card_id, :status]
+    add_index :fizzy_agent_orchestrator_card_sessions, :card_id,
+      name: "idx_fao_card_sessions_card_id"
+    add_index :fizzy_agent_orchestrator_card_sessions, [:card_id, :status],
+      name: "idx_fao_card_sessions_card_status"
   end
 end
