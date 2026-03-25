@@ -2,10 +2,10 @@ module FizzyAgentOrchestrator
   class BoardConfig < ApplicationRecord
     self.table_name = "fizzy_agent_orchestrator_board_configs"
 
-    belongs_to :board
-
+    # Don't use belongs_to - Fizzy scopes boards through Current.user
+    # Just validate the ID is present
     validates :board_id, presence: true, uniqueness: true
-    validates :system_prompt, presence: true
+    validates :system_prompt, allow_blank: true
 
     def closed_context(card)
       build_special_state_context(card, closed_prompt)
