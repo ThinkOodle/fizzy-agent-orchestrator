@@ -1,5 +1,5 @@
 Gem::Specification.new do |s|
-  s.name        = "fizzy-openclaw"
+  s.name        = "fizzy_agent_orchestrator"
   s.version     = "0.1.0"
   s.authors     = ["Oodle"]
   s.summary     = "AI agent integration for Fizzy via OpenClaw"
