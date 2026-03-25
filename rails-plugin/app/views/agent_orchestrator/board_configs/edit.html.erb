@@ -1,0 +1,45 @@
+<% @page_title = "Agent Settings — #{@board.name}" %>
+
+<% content_for :header do %>
+  <div class="header__actions header__actions--start">
+    <%= link_to "← Back to Board Settings", edit_board_path(@board) %>
+  </div>
+  <h1 class="header__title"><%= @page_title %></h1>
+<% end %>
+
+<section class="settings">
+  <div class="settings__panel panel shadow">
+    <div class="settings__section">
+      <h3 class="settings__section-title">Board Context</h3>
+      <p class="settings__section-description">
+        Base prompt included in every agent session on this board. Describe the project, stack, conventions.
+        <br><br>
+        <em>Note: "Not Now", "Done", and other special states use this board context only. Per-column context is set via each column's settings menu.</em>
+      </p>
+
+      <%= form_with model: @agent_config, url: board_agent_config_path(@board), method: :patch do |f| %>
+        <%= f.text_area :system_prompt, class: "input", rows: 8,
+              placeholder: "e.g. You're working on the Nebula project. Stack: Rails 8, Ruby 3.4, Hotwire. Style: StandardRB. Tests: RSpec." %>
+        <div style="margin-top: 1rem">
+          <%= f.submit "Save", class: "btn btn--primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @board.columns.any? %>
+    <div class="settings__panel panel shadow">
+      <div class="settings__section">
+        <h3 class="settings__section-title">Column Agent Context</h3>
+        <ul style="list-style:none; padding:0; margin-top:0.5rem;">
+          <% @board.columns.sorted.each do |column| %>
+            <li style="padding:0.35rem 0; display:flex; justify-content:space-between; align-items:center;">
+              <span><%= column.name %></span>
+              <%= link_to "Configure", edit_board_column_agent_config_path(@board, column), class: "btn btn--link txt-small" %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  <% end %>
+</section>

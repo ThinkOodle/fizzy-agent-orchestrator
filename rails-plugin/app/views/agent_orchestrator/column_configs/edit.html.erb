@@ -1,0 +1,35 @@
+<% @page_title = "Agent Settings — #{@column.name}" %>
+
+<% content_for :header do %>
+  <div class="header__actions header__actions--start">
+    <%= link_to "← Back to Agent Settings", edit_board_agent_config_path(@board) %>
+  </div>
+  <h1 class="header__title"><%= @page_title %></h1>
+<% end %>
+
+<section class="settings">
+  <div class="settings__panel panel shadow">
+    <div class="settings__section">
+      <h3 class="settings__section-title">Column Instructions</h3>
+      <p class="settings__section-description">
+        Added to the board context when an agent works on cards in this column.
+      </p>
+
+      <%= form_with model: @agent_config, url: board_column_agent_config_path(@board, @column), method: :patch do |f| %>
+        <%= f.text_area :system_prompt, class: "input", rows: 6,
+              placeholder: "e.g. Cards here are ready to implement. Write code, run tests, open a PR." %>
+
+        <div style="margin-top: 1rem;">
+          <label style="display:flex; gap:0.5rem; align-items:center; cursor:pointer;">
+            <%= f.check_box :auto_spawn %>
+            Auto-spawn agent when a card enters this column
+          </label>
+        </div>
+
+        <div style="margin-top: 1rem">
+          <%= f.submit "Save", class: "btn btn--primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>
