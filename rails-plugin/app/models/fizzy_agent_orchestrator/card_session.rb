@@ -4,7 +4,7 @@ module FizzyAgentOrchestrator
 
     belongs_to :card
 
-    enum status: { pending: 0, running: 1, completed: 2, failed: 3, stopped: 4 }
+    enum :status, { pending: 0, running: 1, completed: 2, failed: 3, stopped: 4 }
 
     validates :card_id, presence: true
 
